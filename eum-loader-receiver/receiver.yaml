@@ -1,0 +1,77 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: eum-loader-receiver
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  rules:
+  - host: 
+    http:
+      paths:
+      - pathType: Prefix
+        path: /loader/
+        backend:
+          service:
+            name: eum-loader-receiver-1
+            port:
+              number: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: eum-loader-receiver-1
+spec:
+  selector:
+    app: eum-loader-receiver
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 9090
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: eum-loader-receiver
+spec:
+  selector:
+    app: eum-loader-receiver
+  ports:
+  - protocol: TCP
+    port: 9090
+    targetPort: 9090
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eum-loader-receiver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eum-loader-receiver
+  template:
+    metadata:
+      labels:
+        app: eum-loader-receiver
+    spec:
+      containers:
+      - name: eum-loader-receiver
+        image: kimchanghyun/eum-loader-receiver:latest
+        ports:
+        - containerPort: 9090
+        env:
+        - name: TZ
+          value: Asia/Seoul
+        - name: CONFIG_PORT
+          value: "12000"
+        - name: CONFIG_HOST
+          value: eum-loader-core
+        volumeMounts:
+        - name: eumdata-receiver
+          mountPath: /datasurfer
+      volumes:
+      - name: eumdata-receiver
+        persistentVolumeClaim:
+          claimName: eum

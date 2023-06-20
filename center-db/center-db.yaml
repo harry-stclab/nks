@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-secret
+type: Opaque
+data:
+  MYSQL_ROOT_PASSWORD: c3RjMDYwMXZpIHZhbHVlcy55YW1s
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: center-db
+  labels:
+    app: center-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: center-db
+  template:
+    metadata:
+      labels:
+        app: center-db
+    spec:
+      containers:
+      - name: center-db
+        image: kimchanghyun/center-db:0.1.79-k8s
+        env:
+        - name: TZ
+          value: "Asia/Seoul"
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: MYSQL_ROOT_PASSWORD
+        ports:
+        - containerPort: 3306
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: center-db
+spec:
+  selector:
+    app: center-db
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306
+

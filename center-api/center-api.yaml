@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: center-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: center-api
+  template:
+    metadata:
+      labels:
+        app: center-api
+    spec:
+      containers:
+      - name: center-api
+        image: kimchanghyun/center-api:0.1.79-k8s
+        env:
+        - name: TZ
+          value: "Asia/Seoul"
+        - name: ACTIVE_PROFILE
+          value: "onprem"
+        - name: DB_IP
+          value: "center-db"
+        - name: DB_PORT
+          value: "3306"
+        - name: DB_DATABASE
+          value: "surffy"
+        - name: DB_USER
+          value: "admin"
+        - name: CLOUD_SERVICE_PROVIDER
+          value: "onprem"
+        - name: NF_IP
+          value: "nf"
+        - name: NF_PORT
+          value: "10003"
+        - name: EUM_LOADER_IP
+          value: "eum-loader-receiver"
+        - name: EUM_LOADER_PORT
+          value: "9090"
+        - name: LOG_RTT_MAX_DAY
+          value: "365"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-password
+              key: password
+        ports:
+        - containerPort: 8081
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: center-api
+spec:
+  selector:
+    app: center-api
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8081
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: center-api-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  rules:
+  - host:
+    http:
+      paths:
+      - pathType: Prefix
+        path: /center(/|$)(.*)
+        backend:
+          service:
+            name: center-api
+            port:
+              number: 80
+

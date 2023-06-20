@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nf
+spec:
+  selector:
+    matchLabels:
+      app: nf
+  template:
+    metadata:
+      labels:
+        app: nf
+    spec:
+      containers:
+        - name: nf
+          image: kimchanghyun/nfv4:latest
+          env:
+            - name: TZ
+              value: Asia/Seoul
+            - name: NETFUNNEL_TS_HTTP_PORT
+              value: "180"
+            - name: SURFFY_LOADER_ADDR
+              value: center-loader-receiver:9090
+            - name: SURFFY_TENANT_ID
+              value: "1"
+            - name: SURFFY_NETFUNNEL_ID
+              value: "01"
+          ports:
+            - containerPort: 10003
+            - containerPort: 80  
+          volumeMounts:
+           - name: nfdata
+             mountPath: /app/netfunnel4/data
+      volumes:
+      - name: nfdata
+        persistentVolumeClaim:
+          claimName: surffy
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nf
+spec:
+  selector:
+    app: nf
+  ports:
+    - protocol: TCP
+      port: 10003
+      targetPort: 10003
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nf80
+spec:
+  selector:
+    app: nf
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80

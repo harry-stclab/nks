@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: center-loader-receiver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: center-loader-receiver
+  template:
+    metadata:
+      labels:
+        app: center-loader-receiver
+    spec:
+      containers:
+        - name: center-loader-receiver
+          image: kimchanghyun/center-loader-receiver:latest
+          env:
+            - name: TZ
+              value: Asia/Seoul
+            - name: CONFIG_HOST
+              value: "center-loader-core"
+            - name: CONFIG_PORT
+              value: "12000"
+          ports:
+          - containerPort: 9090
+          volumeMounts:
+           - name: data-volume
+             mountPath: /datasurfer
+      volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: surffy
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: center-loader-receiver
+spec:
+  selector:
+    app: center-loader-receiver
+  ports:
+    - protocol: TCP
+      port: 9090
+      targetPort: 9090

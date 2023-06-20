@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: eum
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 500Gi
+  storageClassName: nks-nas-csi
+--- 
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-secret
+type: Opaque
+data:
+  MYSQL_ROOT_PASSWORD: c3RjMDYwMXZpIHZhbHVlcy55YW1s
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eum-db
+  labels:
+    app: eum-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eum-db
+  template:
+    metadata:
+      labels:
+        app: eum-db
+    spec:
+      containers:
+      - name: eum-db
+        image: kimchanghyun/eum-db:latest
+        env:
+        - name: TZ
+          value: "Asia/Seoul"
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: MYSQL_ROOT_PASSWORD
+        ports:
+        - containerPort: 3306
+        volumeMounts:
+         - name: eumdata
+           mountPath: /datasurfer
+      volumes:
+      - name: eumdata
+        persistentVolumeClaim:
+          claimName: eum
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: eum-db
+spec:
+  selector:
+    app: eum-db
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306

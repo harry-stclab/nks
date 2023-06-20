@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eum-loader-core
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eum-loader-core
+  template:
+    metadata:
+      labels:
+        app: eum-loader-core
+    spec:
+      containers:
+        - name: eum-loader-core
+          image: kimchanghyun/eum-loader-core:k8s
+          env:
+            - name: TZ
+              value: Asia/Seoul
+            - name: DB_IP
+              value: eum-db
+            - name: DB_PORT
+              value: "3306"
+            - name: DS_BACKEND_IP
+              value: "eum-api"
+            - name: DS_BACKEND_PORT
+              value: "9091"
+            - name: DB_USER
+              value: admin
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-password
+                  key: password      
+          ports:
+          - containerPort: 12000
+          volumeMounts:
+          - name: eumdata-core
+            mountPath: /datasurfer
+      volumes:
+      - name: eumdata-core
+        persistentVolumeClaim:
+          claimName: eum
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: eum-loader-core
+spec:
+  selector:
+    app: eum-loader-core
+  ports:
+    - protocol: TCP
+      port: 12000
+      targetPort: 12000
+
